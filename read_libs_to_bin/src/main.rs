@@ -19,14 +19,6 @@ const SCAN3: &str = "/Users/drv201/libs_data/CSIR_Results/Interpolated (All Rast
 const SCAN4: &str = "/Users/drv201/libs_data/CSIR_Results/Interpolated (All Raster Shots)/481-540";
 #[allow(dead_code)]
 const SCAN5: &str = "/Users/drv201/libs_data/CSIR_Results/Interpolated (All Raster Shots)/541-588";
-#[allow(dead_code)]
-
-
-
-
-
-
-
 
 
 // Create a convenience to read lines from file, one at a time
@@ -57,12 +49,13 @@ fn get_file_wavelength_intensity(filename: &str)->Vec<(f32, f32)>
 }
 
 // Gets all the data from one file into a Vec of (wavelength, intensity)
+#[allow(dead_code)]
 fn get_file_intensity(filename: &str)->Vec<f32> 
 {
     let lines = read_lines(filename).unwrap();
 
     let mut data: Vec<f32> = Vec::new();
-    let mut first = true;
+    let _first = true;
  
     for line in lines.skip(1){
         let line = line.unwrap();
@@ -152,10 +145,8 @@ fn get_directory_of_data_filenames(fileroot: &str)->Vec<String>{
 // - Get first file, with wavelength and intensity
 // - then get only intensity from all later files
 
-
+#[allow(dead_code)]
 fn write_to_bin() -> std::io::Result<()> {
-
-    let mut file_path = PathBuf::new();
     
     // let path: PathBuf = ["/", "Users", "drv201", "libs_data", "CSIR_Results", "Interpolated (All Raster Shots)", "bin", ]
 
@@ -171,9 +162,10 @@ fn write_to_bin() -> std::io::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn write_wavelengths(lambdas : Vec<f32>) -> std::io::Result<()> {
 
-    let mut file_path = PathBuf::new();
+    // let file_path = PathBuf::new();
     
     // let path: PathBuf = ["/", "Users", "drv201", "libs_data", "CSIR_Results", "Interpolated (All Raster Shots)", "bin", ]
 
@@ -199,7 +191,7 @@ pub fn write_bin<'a>(data: impl Iterator<Item = &'a f32>, path: &std::path::Path
     Ok(())
 }
 
-
+#[allow(dead_code)]
 type IORes<T> = std::io::Result<T>;
 
 pub fn read_bin<'a>(path: &std::path::PathBuf) -> Box<dyn Iterator<Item = f32>>{  
@@ -210,7 +202,7 @@ pub fn read_bin<'a>(path: &std::path::PathBuf) -> Box<dyn Iterator<Item = f32>>{
     Box::new(std::iter::from_fn(move || {
         match file.read_exact(&mut buffer){
             Ok(()) => Some(f32::from_be_bytes(buffer)),
-            Err(error) => None,
+            Err(_error) => None,
         } 
     }))
 }
