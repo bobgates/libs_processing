@@ -395,9 +395,9 @@ pub fn get_index_of_lambda(lambda: f32)->usize {
     return 3970;        // 312.29
 }
 
-
-
-pub fn fetch_a_line(file_dir: &str, lambda: f32, fout_file: &str){
+/// Fetch all the data between lamdba.0 and lambda.1 for all the 
+/// files in a directory and write them to an external file in binary.
+pub fn fetch_a_line(file_dir: &str, lambda: (f32, f32), fout_file: &str){
     let filenames = get_directory_of_data_filenames(file_dir);
     if filenames.len()==0 {
         println!("No files found with a root of: {}", file_dir);
@@ -407,7 +407,7 @@ pub fn fetch_a_line(file_dir: &str, lambda: f32, fout_file: &str){
     println!("{} filenames identified for processing", &filenames.len());
     println!("output file: {} ", fout_file);
 
-    let line_no = get_index_of_lambda(lambda);
+    let line_no_start = get_index_of_lambda(lambda.0);
 
     let mut data : Vec<f32> = Vec::new();
 
@@ -425,18 +425,19 @@ pub fn fetch_a_line(file_dir: &str, lambda: f32, fout_file: &str){
         for line in lines{
             let line = line.unwrap();
 // println!("lambda: {}, line: {}", lambda, line);
-            if !first {
-                let a: Vec<_> = line.split(",").collect();
-                // println!("lambda:{}| intensity:{}|", a[0], a[1].trim());
-                let wavelength: f32 = a[0].trim().parse::<f32>().unwrap();
-                let intensity: f32 = a[1].trim().parse::<f32>().unwrap();
-                if lambda > previous_wavelength && lambda < wavelength {
-                    data.push(intensity);
-                    break;
-                }
-                let previous_wavelength = wavelength;
+            if first {
+                    first = false;
+                    continue;
             }
-            first = false;
+            let a: Vec<_> = line.split(",").collect();
+            // println!("lambda:{}| intensity:{}|", a[0], a[1].trim());
+            let wavelength: f32 = a[0].trim().parse::<f32>().unwrap();
+            let intensity: f32 = a[1].trim().parse::<f32>().unwrap();
+            if lambda > previous_wavelength && lambda < wavelength {
+                data.push(intensity);
+                break;
+            }
+            let previous_wavelength = wavelength;
         }
     }
 
@@ -487,7 +488,14 @@ pub fn main(){
     // average_a_set(SCAN5, 240.0, 320.0, "average_240_320");
 
 
-    let choice : ChooseToRun = ChooseToRun::ProcessAverageData; //ChooseToRun::ProcessOneWavelength;
+    let choice : ChooseToRun = ChooseToRun::ProcessOneWavelength; //ChooseToRun::ProcessOneWavelength;
+
+    let name: &str = match choice {
+        ChooseToRun::NeatPlot => "neat plot",
+        ChooseToRun::ProcessAverageData => "average",
+        ChooseToRun::ProcessOneWavelength => "one wavelength",
+    };
+    println!("Running {} function", name);
 
     let mut lambda_lines : Vec<f32> = Vec::new();
     lambda_lines.push(267.59366);
@@ -495,11 +503,14 @@ pub fn main(){
     lambda_lines.push(312.27831);
 
 
-    let filename = format!("{}/{}", SCAN5, "average_240_320");
-    let title = "LIBS Intensity - Sample 1, Gold";
+    let scan = SCAN5;
+
+
+    let filename = format!("{}/{}", scan, "average_240_320");
+    // let title = "LIBS Intensity - Sample 1, Gold";
     // let title = "LIBS Intensity - Sample 2, Gold";
     // let title = "LIBS Intensity - Sample 3, Gold";
-    // let title = "LIBS Intensity - Sample 4, PGM";
+    let title = "LIBS Intensity - Sample 4, PGM";
     // let title = "LIBS Intensity - Sample 5, Gold";
 
     // Lines are 312.29
@@ -508,10 +519,10 @@ pub fn main(){
 
     match choice {
         ChooseToRun::ProcessAverageData => 
-            average_a_set(SCAN4, 240.0, 320.0, "average_240_320"),
+            average_a_set(scan, 270.0, 420.0, "average_300_400"),
 
         ChooseToRun::ProcessOneWavelength => {
-            fetch_a_line(SCAN1, 242.80,  "242_line"); //267.59. 242.80, 312.29
+            fetch_a_line(scan, 242.80,  "242_line"); //267.59. 242.80, 312.29
 
         },
         ChooseToRun::NeatPlot =>  {

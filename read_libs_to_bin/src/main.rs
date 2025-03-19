@@ -1,13 +1,15 @@
-// use byteorder::LittleEndian;
+/// Process a set of SciAps raw data files into a single 
+/// large binary data file. Set up here with filenames
+/// of some existing directories of files for testing 
+/// purposes. 
+
 use std::fs;
 use std::fs::File;
 use std::io;
-use std::io::{Write, Read};
-// use std::io::Cursor;
+use std::io::Write;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
-use std::process::exit;
 
 #[allow(dead_code)]
 const SCAN1: &str = "/Users/drv201/libs_data/CSIR_Results/Interpolated (All Raster Shots)/338-376";
@@ -23,7 +25,6 @@ const SCAN5: &str = "/Users/drv201/libs_data/CSIR_Results/Interpolated (All Rast
 
 // Create a convenience to read lines from file, one at a time
 // by returning a BufReader, which can be iterated over.
-#[allow(dead_code)]
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
@@ -48,8 +49,7 @@ fn get_file_wavelength_intensity(filename: &str)->Vec<(f32, f32)>
     data
 }
 
-// Gets all the data from one file into a Vec of (wavelength, intensity)
-#[allow(dead_code)]
+// Gets all the data from one file into a Vec of (intensity)
 fn get_file_intensity(filename: &str)->Vec<f32> 
 {
     let lines = read_lines(filename).unwrap();
@@ -79,7 +79,7 @@ fn get_file_intensity(filename: &str)->Vec<f32>
 ///
 /// This routine returns all the shot prefixes, which can be
 /// used to construct a vector of all the data file names.
-pub fn get_shot_prefix(path: &str)-> Vec<String>{
+pub fn get_sorted_shot_prefix(path: &str)-> Vec<String>{
     let mut shot_prefix: Vec<String> = Vec::new();
 
     if let Ok(entries) = fs::read_dir(path){
@@ -112,7 +112,7 @@ pub fn get_shot_prefix(path: &str)-> Vec<String>{
 /// files that it finds.
 fn get_directory_of_data_filenames(fileroot: &str)->Vec<String>{
 
-    let shot_prefix = get_shot_prefix(fileroot);
+    let shot_prefix = get_sorted_shot_prefix(fileroot);
     // let shots = (17..=32).rev();     // Example of downwards counting of shots.
     let shot_no = 1..=256;
 
@@ -124,66 +124,27 @@ fn get_directory_of_data_filenames(fileroot: &str)->Vec<String>{
             let filename = format!("{}/{}{}.csv", fileroot, &shot, suffix);
             let path = Path::new(&filename); // Does file actually exist?
             if !path.exists() {
-                continue;           // If not, don't push the name into the result
+                continue;                           // If not, don't push the name into the result
             }
             filenames.push(filename);
-            // println!("{}/{}{}.csv", fileroot, &shot, suffix);
         }
     }
     filenames
 }
 
-
-
-
-
-
-// Process all the files in a directory into a single
-// binary file for faster access.
-// 
-// Plan:
-// - Get first file, with wavelength and intensity
-// - then get only intensity from all later files
-
-#[allow(dead_code)]
-fn write_to_bin() -> std::io::Result<()> {
-    
-    // let path: PathBuf = ["/", "Users", "drv201", "libs_data", "CSIR_Results", "Interpolated (All Raster Shots)", "bin", ]
-
-    let path = PathBuf::from("/Users/drv201/libs_data/CSIR_Results/Interpolated (All Raster Shots)/bin/");
-    let file_path = path.join("wavelengths.bin");
-
-    // let file_path = dir.path().join("test.bin");
-    let /*mut*/ original_data = vec![1.23, 4.56, 7.89];
-    write_bin(original_data.iter(), &file_path)?;
-    //original_data[1] = 666.66;
-    let reloaded_data: Vec<f32> = read_bin(&file_path).collect();
-    assert_eq!(original_data, reloaded_data);
-    Ok(())
-}
-
-#[allow(dead_code)]
-fn write_wavelengths(lambdas : Vec<f32>) -> std::io::Result<()> {
-
-    // let file_path = PathBuf::new();
-    
-    // let path: PathBuf = ["/", "Users", "drv201", "libs_data", "CSIR_Results", "Interpolated (All Raster Shots)", "bin", ]
-
-    let path = PathBuf::from("/Users/drv201/libs_data/CSIR_Results/Interpolated (All Raster Shots)/bin/");
-    let file_path = path.join("wavelengths.bin");
-
-    // let file_path = dir.path().join("test.bin");
-    // let /*mut*/ original_data = vec![1.23, 4.56, 7.89];
-    write_bin(lambdas.iter(), &file_path)?;
-//    let reloaded_data: Result<Vec<f32>, _> = read_bin(&file_path)?.collect();
-//    assert_eq!(original_data, reloaded_data.unwrap());
-    Ok(())
-}
-
-/// Code from the internet that allows to write f32s to binary files
+/// Code from the internet that writes an iterator of f32s to a binary file
 /// https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=48fb576c4fa0fce24d584eebf26529d1
-pub fn write_bin<'a>(data: impl Iterator<Item = &'a f32>, path: &std::path::PathBuf) -> std::io::Result<()> {
-    let mut file = File::create(path)?;
+pub fn write_bin<'a>(data: impl Iterator<Item = &'a f32>, mut file: &File) -> std::io::Result<&File> {
+    
+    for datum in data {
+        let bytes = datum.to_be_bytes();
+        file.write(&bytes)?;
+    }
+    Ok(file)
+}
+
+// Adds further data to an existing binary file. Use with write_bin
+pub fn append_bin<'a>(data: impl Iterator<Item = &'a f32>, mut file: &File)-> std::io::Result<()> {//path: &std::path::PathBuf) -> std::io::Result<()> {
     for datum in data {
         let bytes = datum.to_be_bytes();
         file.write(&bytes)?;
@@ -191,99 +152,84 @@ pub fn write_bin<'a>(data: impl Iterator<Item = &'a f32>, path: &std::path::Path
     Ok(())
 }
 
-#[allow(dead_code)]
-type IORes<T> = std::io::Result<T>;
-
-pub fn read_bin<'a>(path: &std::path::PathBuf) -> Box<dyn Iterator<Item = f32>>{  
+pub fn import_sciaps_to_bin(input_path : &str, output_path: &str, verbose: bool)-> std::io::Result<()>{
     
-    let mut file = File::open(path).unwrap();
-    let mut buffer = [0; 4];
+    let input_filenames = get_directory_of_data_filenames(input_path);
+    let n = input_filenames.len();
+    if verbose {
+        println!("{n} files found");
+        println!("First filename is {}", input_filenames[0]);
+        println!("Getting wavelengths");
+    }
 
-    Box::new(std::iter::from_fn(move || {
-        match file.read_exact(&mut buffer){
-            Ok(()) => Some(f32::from_be_bytes(buffer)),
-            Err(_error) => None,
-        } 
-    }))
-}
-
-
-pub fn main() -> std::io::Result<()>{
-    let path = SCAN5;
-    let filenames = get_directory_of_data_filenames(path);
-    let n = filenames.len();
-    println!("{n} files found");
-    println!("First filename is {}", filenames[0]);
-
-    let lambda_i = get_file_wavelength_intensity(&filenames[0]); 
+    // Get wavelengths first and store them to file
+    let lambda_i = get_file_wavelength_intensity(&input_filenames[0]); 
     let mut lambdas: Vec<f32> = Vec::new();
     for i in lambda_i {
         lambdas.push(i.0);
     }
+    let output_path = PathBuf::from(output_path);
+    let file_path = output_path.join("wavelengths.bin");
+    if verbose {
+        println!("Filepath: {}", file_path.display());
+    }
+    let file  =  File::create(file_path)?;
+    write_bin(lambdas.iter(), &file)?;
+    if verbose {
+        println!("Wavelengths done");
+    }
 
+    // Now get amplitude data and start adding it to the 
+    // amplitudes.bin file
+    if verbose {
+        println!("Getting amplitude data");
+    }
 
-    let path = PathBuf::from("/Users/drv201/libs_data/CSIR_Results/Interpolated (All Raster Shots)/bin/");
-    let file_path = path.join("wavelengths.bin");
+    let output_path = PathBuf::from(output_path);
+    let file_path = output_path.join("amplitudes.bin");
+    let file = File::create(file_path)?;
+    let mut first = true;
+    let mut filesize: usize = 0;
+    for (i, filename) in input_filenames.iter().enumerate(){
+        let rx_i = get_file_intensity(&input_filenames[i]);
+        if first { 
+            filesize = rx_i.len();
+        }
 
-    println!("Filepath: {}", file_path.display());
+        let l = rx_i.len();
+        if filesize != l {
+            println!("filesize is wrong for the next file");
+            let errstr = format!("Error in filesize of {filename}");
+            return Err(std::io::Error::new(io::ErrorKind::Other, errstr));
+        }
+        if verbose {
+            println!("{i}/{n}, {filename}");
+        } else {
+            print!(".");
+            let _ = io::stdout().flush();
+        }
 
-
-    // let /*mut*/ original_data = vec![1.23, 4.56, 7.89];
-    write_bin(lambdas.iter(), &file_path)?;
-
-    let reloaded_data: Vec<f32> = read_bin(&file_path).collect::<Vec<_>>();
-    for i in 0..lambdas.len(){
-        if lambdas[i]!= reloaded_data[i] {
-            println!("Error in entry {} of reloaded data", i);
-            exit(-1);
+        let mut rx_strength: Vec<f32> = Vec::new();
+        for i in rx_i{
+            rx_strength.push(i);
+        }
+        if first {
+            write_bin(rx_strength.iter(), &file)?;
+            first = false;
+        } else {
+            let _ = append_bin(rx_strength.iter(), &file);
         }
     }
-    println!("Reloaded data was without error");
+
+
    Ok(())
 }
 
-// fn main_() {
 
-// //     bin_iter();
-// //     return;
-// // }
-
-//     //println!("Hello, world!");
-//     let path = SCAN5;
-
-
-//     // let shot_prefix = get_shot_prefix(path);
-//     // for i in 0..10 {
-//     //     println!("Shot prefix: {}", shot_prefix[i]);
-//     // }
-
-//     let filenames = get_directory_of_data_filenames(path);
-//     let n = filenames.len();
-//     println!("{n} files found");
-//     println!("First filename is {}", filenames[0]);
-
-//     let lambda_i = get_file_wavelength_intensity(&filenames[0]); 
-//     let mut lambdas: Vec<f32> = Vec::new();
-
-//     for i in lambda_i {
-//         lambdas.push(i.0);
-//     }
-
-//     write_wavelengths(lambdas); 
-
-// // test code: write first 100 wavelengths, then read them back:
-
-//     let mut f = File::create("/Users/drv201/libs_data/CSIR_Results/Interpolated (All Raster Shots)/bin/first.bin");
-//     // let cursor = Cursor::new(&mut f);
-//     cursor.write_f32::<LittleEndian>(10).unwrap;
-
-
-//     match f {
-//         Err(e) => println!("Unable to open bin file for writing, error: {:?}",e),
-//         Ok(t) => println!("Opened file okay"),
-//     }
-
-//     println!("Number of wavelengths is {}", lambda_i.len());
-    
-
-// }
+pub fn main() -> std::io::Result<()>{
+    let path = SCAN1;
+    import_sciaps_to_bin(path, 
+                         "/Users/drv201/Code/libs_processing/read_libs_to_bin/data/", 
+                         false
+                        )
+}
