@@ -1,6 +1,7 @@
 /// This file searches binary data files looking for
 /// file that have a specified lambda over a specified value
 
+#[warn(unused_imports)]
 use std::process::exit;
 use crate::bin_to_memory::{get_lambdas, get_counts};
 
@@ -14,10 +15,10 @@ const DATASET : &str= "/Users/drv201/Code/libs_processing/read_libs_to_bin/data/
 // It's designed for a smallish number of wavelengths, but that shouldn't make 
 // too much difference.
 
-pub struct CountsPerLambda {
-    lambda: f32,
-    counts: Vec<f32>,
-}
+// pub struct CountsPerLambda {
+//     lambda: f32,
+//     counts: Vec<f32>,
+// }
 
 /// given a list of wanted wavelengths and a pointer to the wavelengths file, 
 /// this loads all the lambdas, then goes through them to find the wanted
@@ -69,6 +70,7 @@ pub fn search_by_lambda(fileroot: &str, wanted_lambdas : Vec<f32>) {//-> Vec<Vec
     if indices.len()<1 {    // No good data, just send empty data
         // return data
     }
+
  
     println!("Separating out the following {} wavelengths, sorted by data index", data.len());
     for i in 0..indices.len() {

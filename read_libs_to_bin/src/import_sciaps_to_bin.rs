@@ -2,6 +2,19 @@
 /// binary data file. Set up here with filenames
 /// of some existing directories of files for testing 
 /// purposes. 
+/// 
+/// Data formats
+/// ------------
+/// The process produces two files: 
+/// wavelenths.bin simply contains pairs of wavelength and index.
+/// amplitudes.bin has two 8 byte integers right at the beginning
+/// that define the rest of the data. The first is the number of
+/// data vectors in the file, while the second is the number of
+/// wavelengths in the file.
+/// 
+/// The data then follows in close packed f32s: first a vec for all the 
+/// wavelengths, then a vec for the number of LIBS shots, or spectra.
+/// 
 
 use std::fs;
 use std::fs::File;
@@ -55,8 +68,7 @@ pub fn get_file_wavelength_intensity(filename: &str)->Vec<(f32, f32)>
 // Gets all the data from one file into a Vec of (intensity)
 fn get_file_intensity(filename: &str)->Vec<f32> 
 {
-    println!("In get_file_intensity");
-
+    // println!("In get_file_intensity");
 
     let lines = read_lines(filename).unwrap();
 
@@ -164,14 +176,15 @@ pub fn write_bin<'a>(data: impl Iterator<Item = &'a f32>, mut file: &File) -> st
 pub fn write_sizes<'a>(n_spectra: u64, n_wavelengths: u64, mut file: &File) -> std::io::Result<&File> {
     
         let bytes = n_spectra.to_be_bytes();
-
         file.write(&bytes)?;
+        let bytes = n_wavelengths.to_be_bytes();
+        file.write(&bytes);
 
     Ok(file)
 }
 
 
-// Adds further data to an existing binary file. Use with write_bin
+// Adds further f32 data to an existing binary file. Use with write_bin
 pub fn append_bin<'a>(data: impl Iterator<Item = &'a f32>, mut file: &File)-> std::io::Result<()> {//path: &std::path::PathBuf) -> std::io::Result<()> {
     for datum in data {
         let bytes = datum.to_be_bytes();
