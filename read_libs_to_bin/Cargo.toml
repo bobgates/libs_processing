@@ -3,4 +3,8 @@ name = "read_libs_to_bin"
 version = "0.1.0"
 edition = "2021"
 
+# [[bin]]
+# name = "import"
+# path = "/src/import_sciaps_to_bin.rs"
+
 [dependencies]
