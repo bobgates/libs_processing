@@ -4,7 +4,7 @@ mod bin_to_memory;
 mod utils;
 
 #[warn(unused_imports)]
-use import_sciaps_to_bin::{get_file_wavelength_intensity, import_sciaps_to_bin};
+// use import_sciaps_to_bin::{get_file_wavelength_intensity, import_sciaps_to_bin};
 
 // Some defines for testing and to illustrate use
 #[allow(dead_code)]
