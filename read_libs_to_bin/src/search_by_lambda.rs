@@ -140,7 +140,7 @@ println!("length and indices: {:?}", length);
     let mut count = 0;
     let mut output : Vec<f32> = Vec::new();
     for d in &data {
-        // println!("{}", d[1884]);
+        println!("{}", d[1884]);
         output.push(d[1884]);
         count+=1;
     }
