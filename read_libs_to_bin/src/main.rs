@@ -1,3 +1,8 @@
+use clap::{Parser, Subcommand};
+use std::fs;
+use std::fs::File;
+use std::io::Write;
+
 mod import_sciaps_to_bin;
 mod search_by_lambda;
 mod bin_to_memory;
@@ -29,18 +34,65 @@ const DATASET5 : &str= "/Users/drv201/Code/libs_processing/read_libs_to_bin/data
 const DATASET_TEST : &str= "/Users/drv201/Code/libs_processing/read_libs_to_bin/data/test_data";
 
 
+#[derive(Parser)]
+#[command()]
+struct Cli {
+    // #[command(subcommand)]
+    input_folder: String,
 
-
-pub fn main() {
-
-    // let data = import_sciaps_to_bin(SCAN1, DATASET1, false).unwrap();
-
-
-
-
-    let results = search_by_lambda::search_by_lambda(DATASET4, [312.29, 242.80, 267.59].to_vec());
-
-    // let data = get_counts()
+    // in_path: std::path::PathBuf,
+    out_path: std::path::PathBuf,
 }
 
+use std::path::PathBuf;
+
+use clap::{arg, command, value_parser, ArgAction, Command};
+
+
+
+ pub fn main() {
+
+
+    let data_set : &str= "/Users/drv201/Code/libs_processing/read_libs_to_bin/my_scan1";
+    let wanted_lambdas = [312.29, 242.80, 267.59].to_vec();
+    let output_location ="/Users/drv201/Code/libs_processing/read_libs_to_bin/data/scan1/selected_lambdas.csv";
+    
+    let results = search_by_lambda::search_by_lambda(data_set, [312.29, 242.80, 267.59].to_vec());
+
+   let mut file = File::create(output_location).expect("failed to open file");
+
+    for i in results {
+        file.write_all(i.as_ref()).unwrap();
+    }
+
+
+    // let mut file = File::create(output_location).expect("failed to open file");
+    // for line in results {
+        // std::fs::write(output_location, results);
+    // }
+}
+
+// struct Cli {
+//     #[clap(short, long, group = "input")]
+//     /// Watch the local database to see data being written to it
+//     watch: bool,
+
+//     #[clap(short, long, group = "input")]
+//     /// Initialize the device from /boot/trucklog.toml. Will reboot.
+//     init: bool,
+
+//     #[clap(short, long, group = "input")]
+//     /// Show the current device configuration.
+//     config: bool,
+
+//     #[clap(short, long, group = "input")]
+//     /// Drop the data from local imu, beacons & gps tables. Unrecoverable!
+//     drop: bool,
+
+//     #[clap(short, long, group = "input")]
+//     /// Show the network table to check whether devices know about each other
+//     network: bool,
+// }
+
+// #
 

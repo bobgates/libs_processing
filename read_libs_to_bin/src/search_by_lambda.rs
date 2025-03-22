@@ -9,8 +9,8 @@ use std::process::exit;
 // use std::process::exit;
 use crate::bin_to_memory::{get_counts, F32Reader, get_lambdas};
 
-const DATASET : &str= "/Users/drv201/Code/libs_processing/read_libs_to_bin/data/scan4";
-const DATAFILE : &str = "/scan4_amplitudes.bin";
+const DATASET : &str= "/Users/drv201/Code/libs_processing/read_libs_to_bin/data/scan1";
+const DATAFILE : &str = "/amplitudes.bin";
 
 
 
@@ -97,65 +97,127 @@ pub fn get_lambda(wanted_lambdas: &Vec<f32>, lambdas_filename: &str)-> (u64, Vec
 /// This takes a vector of f32 wavelengths in um for which we want data, and produces 
 /// a vector of vectors, where each of the inner vectors corresponds to all the
 /// results for a particular wavelength
-pub fn search_by_lambda(fileroot: &str, wanted_lambdas : Vec<f32>) {//-> Vec<Vec<f32>>{
+pub fn search_by_lambda(fileroot: &str, wanted_lambdas : Vec<f32>) -> Vec<String>{
 
     println!("fetching data from {}", fileroot);
-    let lambdas_filename = format!("{}/scan4_wavelengths.bin",fileroot); 
+    let lambdas_filename = format!("{}/wavelengths.bin",fileroot); 
     println!("filename: {}", lambdas_filename);
+
     let lambda_info = get_lambda_indexes(&wanted_lambdas, &lambdas_filename);
     println!("lambda info: {:?}", lambda_info);
-
     let length = lambda_info.0;
-    let indices = lambda_info.1;
+    let wanted_indices = lambda_info.1;
 
-println!("length and indices: {:?}", length);
+println!("length and indices: {} - {:?}", length, wanted_indices);
 
     let data: Vec<Vec<f32>>= Vec::new();
-    if indices.len()<1 {    // No good data, just send empty data
+    if wanted_indices.len()<1 {    // No good data, just send empty data
         // return data
     }
+    let n_lambdas = wanted_indices.len();
 
- 
     println!("Separating out the following {} wavelengths, sorted by data index", data.len());
-    for i in 0..indices.len() {
-        println!("{}: {} nm ", indices[i].unwrap(), wanted_lambdas[i]);
+    for i in 0..n_lambdas {
+        println!("{}: {} nm ", wanted_indices[i].unwrap(), wanted_lambdas[i]);
     }
     println!();
     // indices contains the vec of the indices of all the lambda values
     // that we wish to extract from the data.
 
-    let signals_filename = format!("{}/scan4_amplitudes.bin",fileroot); 
-    let data = get_counts(&signals_filename, indices.len() as u64);
+    let signals_filename = format!("{}/amplitudes.bin",fileroot); 
+    let data = get_counts(&signals_filename, wanted_indices.len() as u64);
 
+    let mut output: Vec<String> = Vec::new();
 
-    let input = File::open(signals_filename).unwrap();
-    let lambdas: Vec<f32> = F32Reader::new(BufReader::new(input)).collect();
+    // Code to dump the data. It looks good.
+    let mut first = true;
+    let mut line: String = "".to_string();
 
-    
-    println!("get_counts: first length: {}, second length: {}", data.len(), data[1].len());
-
-
-    let one_lambda : Vec<f32> = Vec::new();
-
-    let mut count = 0;
-    let mut output : Vec<f32> = Vec::new();
-    for d in &data {
-        println!("{}", d[1884]);
-        output.push(d[1884]);
-        count+=1;
+    for lambda in wanted_lambdas{
+        if first {
+            line = format!("{}", lambda);
+            first = false;
+        } else {
+            line = format!("{}, {}", line.clone(), lambda);
+        }
     }
-    println!("Total lines read: {}", count);
+    output.push(line.clone());
+    
+    for data_vec in &data {
+        let mut first = true;
+        for j in &wanted_indices {
+            if let Some(index) = j {
+                let i = *index as usize;
+                if first {
+                    line=format!("{}", data_vec[i]);
+                    // print!("{}", data_vec[i]);
+                    first = false;
+                } else {
+                    line = format!("{}, {}", line.clone(), data_vec[i]);
+                    // print!(", {}", data_vec[i]);       
+                }
+            }
+            output.push(line.clone());
+        }
+        println!("");
+    }
+
+    output
+}
+
+
+
+//     // let input = File::open(signals_filename).unwrap();
+//     // let lambdas: Vec<f32> = F32Reader::new(BufReader::new(input)).collect();
 
     
-    // for d in &data{
-    //     println!("Outside")
-    // }
+//     // println!("get_counts: first length: {}, second length: {}", data.len(), data[1].len());
+
+// exit(0);
 
 
-    //println!("data outside: {}, data inside: {}, {}", data.len(), data[1].len(), data[2].len());
+//     // let one_lambda : Vec<f32> = Vec::new();
+
+//     // let mut count = 0;
+//     // let mut output : Vec<String> = Vec::new();
+//     // for d in data.into_iter().enumerate() {
+
+//     //     for i in 0.. {
+//     //         print!("{:?} - {}", d.0, d.1[0]);
+//     //         for j in 1..n_lambdas{
+//     //             print!(", {}", d.1[j]);    
+//     //         }
+//     //         println!("");
+//     //     }
+
+//     //     exit(0);
+
+//         // let mut line: String = "".to_string();
+//         // let mut first = true;
+//         // for (i, _j) in indices.into_iter().enumerate() {
+//         //     if first {
+//         //         line = d[i].to_string();
+//         //         first = false;
+//         //     } else {
+//         //         line = [line, d[i].to_string()].join(", ");
+//         //     }
+//         //     println!("{line}");
+//         // }           
+//     }
+//     println!("Total lines read: {}", count);
 
 
-}
+
+    
+//     // for d in &data{
+//     //     println!("Outside")
+//     // }
+
+
+//     //println!("data outside: {}, data inside: {}, {}", data.len(), data[1].len(), data[2].len());
+
+
+// }
 
 // This routine can reorder the sensor data to put it in column order, always starting at the bottom:
 /*  
